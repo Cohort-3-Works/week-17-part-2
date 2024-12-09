@@ -58,4 +58,46 @@ app.post("/signup", async (req: Request, res: Response) => {
   }
 });
 
+app.post("/betterSignup", async (req: Request, res: Response) => {
+  const { username, password, email, city, country, street, pincode } =
+    req.body;
+  try {
+    await client.query("BEGIN;");
+
+    const insertQuery = `INSERT INTO users (username , password , email ) VALUES ($1 , $2,  $3) RETURNING id`;
+
+    const response = await client.query(insertQuery, [
+      username,
+      password,
+      email,
+    ]);
+    console.log(response);
+
+    const user_id = response.rows[0].id;
+
+    const insertAddress =
+      "INSERT INTO addresses (city , country , street , pincode, user_id) VALUES ($1, $2 , $3 , $4, $5)";
+    const addressResponse = await client.query(insertAddress, [
+      city,
+      country,
+      street,
+      pincode,
+      user_id,
+    ]);
+
+    await client.query("COMMIT;");
+
+    return res.status(200).json({
+      success: true,
+      message: "successfull !!!",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "server error occured",
+    });
+  }
+});
+
 connectDB();
